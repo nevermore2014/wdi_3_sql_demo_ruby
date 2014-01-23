@@ -24,10 +24,8 @@ module GA
       json: { name: "json" }, ltree: { name: "ltree" }
     }
 
-    def initialize(dbname, user="", password="")
+    def initialize(dbname)
       @dbname = dbname
-      @user = user
-      @password = password
     end
 
     def connect
@@ -35,7 +33,6 @@ module GA
     end
 
     def create_database
-#      system("createdb -e #{@dbname} 2> /dev/null")
       system("createdb #{@dbname} 2> /dev/null")
     end
 
@@ -66,15 +63,24 @@ module GA
       @conn.exec(sql)
     end
 
-    def create_insert_sql(table_name, cols_hash)
-      col_names ="#{cols_hash.keys.map(&:to_sym).join(',')}"
-      cols_hash.each do |k, v|
+    def create_insert_sql(table_name, col_val_hash)
+      col_names ="#{col_val_hash.keys.map(&:to_sym).join(',')}"
+      col_val_hash.each do |k, v|
         if v.class.name == "String"
-          cols_hash[k] = "'#{v}'"
+          col_val_hash[k] = "'#{v}'"
         end
       end
-      values = "#{cols_hash.values.join(',')}"
+      values = "#{col_val_hash.values.join(',')}"
       "INSERT INTO #{table_name} (#{col_names}) VALUES (#{values})"
+    end
+
+    def select(table_name)
+      sql = create_select_sql(table_name)
+      @conn.exec(sql)
+    end
+
+    def create_select_sql(table_name)
+      "SELECT * FROM #{table_name}"
     end
 
     private
@@ -84,11 +90,11 @@ module GA
 
       if db_type == :primary_key
         "serial primary key"
-        elsif db_type == :string
-          "character varying(255)"
-        else
-          NATIVE_DATABASE_TYPES[db_type.to_sym][:name]
-        end
+      elsif db_type == :string
+        "character varying(255)"
+      else
+        NATIVE_DATABASE_TYPES[db_type.to_sym][:name]
+      end
     end
   end
 end

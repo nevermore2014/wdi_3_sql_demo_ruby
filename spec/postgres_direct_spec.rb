@@ -1,5 +1,6 @@
 require_relative './spec_helper'
 require_relative '../lib/postgres_direct'
+require_relative '../lib/user'
 
 describe GA::PostgresDirect do
   let(:dbname) { 'pg_direct_test'}
@@ -9,33 +10,9 @@ describe GA::PostgresDirect do
   end
 
   subject { GA::PostgresDirect.new(dbname) }
-
-  describe "without a existing DB" do
-    before(:each) do
-      system("dropdb #{dbname} 2> /dev/null")
-    end
-
-    it "#drop_database" do
-      expect(subject.drop_database).to eq false
-    end
-
-    it "#create_database" do
-      expect(subject.create_database).to eq true
-      psql_check_db(dbname)
-    end
-  end
-
   describe "with an existing DB" do
     before(:each) do
       system("createdb #{dbname} 2> /dev/null")
-    end
-
-    it "#drop_database" do
-      expect(subject.drop_database).to eq true
-    end
-
-    it "#create_database" do
-      expect(subject.create_database).to eq false
     end
 
     it "#connect" do
@@ -83,17 +60,41 @@ describe GA::PostgresDirect do
           expect(result).to eq expected_sql
         end
 
-        it "#insert_sql" do
+        it "#insert" do
           result = subject.insert(table_name, age: age, name: name)
           expect(result).to be_an_instance_of PG::Result
           expect(result.res_status(result.result_status)).to eq "PGRES_COMMAND_OK"
+        end
+
+        describe "populated users table" do 
+          before(:each) do 
+            4.times do |i|
+              subject.insert(table_name, age: 20+i, name: "person_#{i}")
+            end
+          end
+
+          it "#select_sql" do
+            expect(subject.create_select_sql(table_name)).to eq "SELECT * FROM #{table_name}"
+          end
+
+          it "#select" do
+            result = subject.select(table_name)
+            expect(result).to be_an_instance_of PG::Result
+            expect(result.res_status(result.result_status)).to eq "PGRES_TUPLES_OK"
+
+            expect(result[0]['age'].to_i).to eq 20
+            expect(result[0]['name']).to eq 'person_0'
+            expect(result[3]['age'].to_i).to eq 23
+            expect(result[3]['name']).to eq 'person_3'
+
+            result.each do |user_hash|
+              # built the class name dynamically!
+              users = GA::User.new(user_hash["id"], user_hash["name"], user_hash["age"])
+            end          
+          end
         end
       end
     end
   end
 
-end
-
-def psql_check_db(dbname)
-#  %x( psql -l | grep #{dbname})
 end
