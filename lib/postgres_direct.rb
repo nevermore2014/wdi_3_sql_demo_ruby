@@ -32,14 +32,6 @@ module GA
       @conn = PG.connect(dbname: @dbname)
     end
 
-    def create_database
-      system("createdb #{@dbname} 2> /dev/null")
-    end
-
-    def drop_database
-      system("dropdb #{@dbname} 2> /dev/null")
-    end
-
     def drop_table(table_name)
       @conn.exec("DROP TABLE IF EXISTS #{table_name}")
     end
@@ -74,13 +66,15 @@ module GA
       "INSERT INTO #{table_name} (#{col_names}) VALUES (#{values})"
     end
 
-    def select(table_name)
-      sql = create_select_sql(table_name)
+    def select(table_name, where_clause="")
+      sql = create_select_sql(table_name, where_clause)
       @conn.exec(sql)
     end
 
-    def create_select_sql(table_name)
-      "SELECT * FROM #{table_name}"
+    def create_select_sql(table_name, where_clause="")
+      sql = "SELECT * FROM #{table_name}"
+      sql += " WHERE #{where_clause}" unless where_clause.empty?
+      sql
     end
 
     private

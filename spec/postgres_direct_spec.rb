@@ -66,8 +66,8 @@ describe GA::PostgresDirect do
           expect(result.res_status(result.result_status)).to eq "PGRES_COMMAND_OK"
         end
 
-        describe "populated users table" do 
-          before(:each) do 
+        describe "populated users table" do
+          before(:each) do
             4.times do |i|
               subject.insert(table_name, age: 20+i, name: "person_#{i}")
             end
@@ -87,11 +87,16 @@ describe GA::PostgresDirect do
             expect(result[3]['age'].to_i).to eq 23
             expect(result[3]['name']).to eq 'person_3'
 
-            result.each do |user_hash|
-              # built the class name dynamically!
-              users = GA::User.new(user_hash["id"], user_hash["name"], user_hash["age"])
-            end          
           end
+          it "#select with a where clause" do
+            result = subject.select(table_name, 'id = 2')
+            expect(result).to be_an_instance_of PG::Result
+            expect(result.res_status(result.result_status)).to eq "PGRES_TUPLES_OK"
+
+            expect(result[0]['age'].to_i).to eq 21
+            expect(result[0]['name']).to eq 'person_1'
+          end
+
         end
       end
     end
