@@ -24,6 +24,8 @@ module GA
       json: { name: "json" }, ltree: { name: "ltree" }
     }
 
+    attr_accessor :dbname
+
     def initialize(dbname)
       @dbname = dbname
     end
@@ -66,17 +68,17 @@ module GA
       "INSERT INTO #{table_name} (#{col_names}) VALUES (#{values})"
     end
 
-    def select(table_name, where_clause="")
+    def self.select(table_name, where_clause="")
       sql = create_select_sql(table_name, where_clause)
       @conn.exec(sql)
     end
 
-    def create_select_sql(table_name, where_clause="")
+    def self.create_select_sql(table_name, where_clause="")
       sql = "SELECT * FROM #{table_name}"
       sql += " WHERE #{where_clause}" unless where_clause.empty?
-      sql
     end
 
+    def self.find
     private
 
     def xlate_datatypes(col_type)

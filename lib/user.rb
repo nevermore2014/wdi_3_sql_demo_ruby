@@ -1,8 +1,11 @@
+require_relative './postgres_direct'
+require 'pry'
+
 module GA
   class User < PostgresDirect
     attr_accessor :id, :name, :age
-    def initialize(id, name, age)
-      @db_id = id
+
+    def initialize(name, age)
       @name = name
       @age = age
     end
@@ -16,7 +19,8 @@ module GA
     def self.find_by_id(id)
       res = self.select('users', "id = #{id}")
       user_hash = res.first
-      GA::User.new(user_hash["id"], user_hash["name"], user_hash["age"])
+      user = GA::User.new(user_hash["id"], user_hash["name"], user_hash["age"])
+      user.id = user_hash['id']
     end
 
     def self.find_all
